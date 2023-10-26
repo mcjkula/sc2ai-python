@@ -5,7 +5,7 @@ from sc2.ids.ability_id import AbilityId
 from sc2.ids.buff_id import BuffId
 from sc2.ids.upgrade_id import UpgradeId
 
-class FourGateStrategy(BotAI):
+class FourGate(BotAI):
     NAME: str = "FourGateStrategy"
     RACE: Race = Race.Protoss
     SUPPLY_LEFT_THRESHOLD = 2
