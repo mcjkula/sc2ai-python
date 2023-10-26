@@ -16,6 +16,7 @@ class FourGate(BotAI):
     def __init__(self):
         super().__init__()
         self.gateways_issued = 0  # Temporary Fix (Issues with Gateway-Limit)
+        self.proxy_built = False
 
     async def on_start(self):
         print("Game started")
@@ -38,6 +39,8 @@ class FourGate(BotAI):
         await self.chrono_boost(nexus)
         await self.research_warpgate()
         await self.attack()
+        await self.warp_stalkers()
+        await self.stalker_micro()
 
     def attack_with_workers(self):
         for worker in self.workers:
@@ -51,6 +54,14 @@ class FourGate(BotAI):
         if self.supply_left < self.SUPPLY_LEFT_THRESHOLD and self.can_afford(UnitTypeId.PYLON) and not self.already_pending(UnitTypeId.PYLON):
             pos = nexus.position.towards(self.enemy_start_locations[0], 10)
             await self.build(UnitTypeId.PYLON, near=pos)
+
+        if (self.structures(UnitTypeId.GATEWAY).amount == 4
+            and not self.proxy_built
+            and self.can_afford(UnitTypeId.PYLON)):
+            pos = self.game_info.map_center.towards(self.enemy_start_locations[0], 20)
+
+            await self.build(UnitTypeId.PYLON, near=pos)
+            self.proxy_built = True
 
     async def build_initial_gateway(self):
         if self.gateways_issued < 1 and self.can_afford(UnitTypeId.GATEWAY) and self.structures(UnitTypeId.PYLON).ready:
@@ -115,9 +126,43 @@ class FourGate(BotAI):
 
     async def attack(self):
         stalkers = self.units(UnitTypeId.STALKER).ready.idle
-        if stalkers.amount > 4:
+
+        if self.structures(UnitTypeId.PYLON).ready:
+            proxy = self.structures(UnitTypeId.PYLON).closest_to(self.enemy_start_locations[0])
+            proxy_position = proxy.position.random_on_distance(3)
+
+        if stalkers.amount > 8:
             for stalker in stalkers:
                 stalker.attack(self.enemy_start_locations[0])
+        else:
+            for stalker in stalkers:
+                stalker.attack(proxy_position)
+
+
+    async def warp_stalkers(self):
+        for warpgate in self.structures(UnitTypeId.WARPGATE).ready:
+            abilities = await self.get_available_abilities(warpgate)
+            proxy = self.structures(UnitTypeId.PYLON).closest_to(self.enemy_start_locations[0])
+
+            if AbilityId.WARPGATETRAIN_STALKER in abilities and self.can_afford(UnitTypeId.STALKER):
+                placement = proxy.position.random_on_distance(3)
+
+                warpgate.warp_in(UnitTypeId.STALKER, placement)
+
+    async def stalker_micro(self):
+        stalkers = self.units(UnitTypeId.STALKER)
+        enemy_location = self.enemy_start_locations[0]
+
+        if self.structures(UnitTypeId.PYLON).ready:
+            pylon = self.structures(UnitTypeId.PYLON).closest_to(self.enemy_start_locations[0])
+
+            for stalker in stalkers:
+                if stalker.weapon_cooldown == 0:
+                    stalker.attack(enemy_location)
+                elif stalker.weapon_cooldown < 0:
+                    stalker.move(pylon)
+                else:
+                    stalker.move(pylon)
 
     async def on_end(self, result: Result):
         print("Game ended.")
