@@ -1,0 +1,1 @@
+from .bot import FourGateStrategy  # noqa: F401
