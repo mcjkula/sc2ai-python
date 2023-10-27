@@ -8,7 +8,7 @@ from sc2.data import Race, Difficulty
 from sc2.client import Client
 from sc2.player import Bot, Computer
 from sc2.protocol import ConnectionAlreadyClosed
-from bots import FourGate
+from bot import FourGate
 
 
 class LadderGame:

@@ -5,7 +5,7 @@ import shutil
 import zipfile
 from typing import Optional
 
-from bots import FourGate as bot
+from bot import FourGate as bot
 
 # Ignore the annoying resource warning from importing sc2 when an SC2 instance isn't running.
 import warnings
